@@ -1,91 +1,157 @@
 @using Soenneker.Quark.Enums.Colors
 @using Soenneker.Quark.Enums.Size
+@using Soenneker.Quark.Validations
+@using Soenneker.Quark.Validations.Enums
+@using System.Linq.Expressions
 @inherits Soenneker.Quark.Components.Element
+@implements Soenneker.Quark.Validations.Abstract.IValidationInput
+
 
 <input type="text" @attributes="BuildAttributes()" />
 
 @code {
-    [Parameter]
-    public string? Value { get; set; }
+	[Parameter]
+	public string? Value { get; set; }
 
-    [Parameter]
-    public string? Placeholder { get; set; }
+	[Parameter]
+	public EventCallback<string?> ValueChanged { get; set; }
 
-    [Parameter]
-    public bool Disabled { get; set; }
+	[Parameter]
+	public Expression<Func<string>>? ValueExpression { get; set; }
 
-    [Parameter]
-    public bool ReadOnly { get; set; }
+	[Parameter]
+	public string? Placeholder { get; set; }
 
-    [Parameter]
-    public bool Required { get; set; }
+	[Parameter]
+	public bool Disabled { get; set; }
 
-    [Parameter]
-    public int MaxLength { get; set; }
+	[Parameter]
+	public bool ReadOnly { get; set; }
 
-    [Parameter]
-    public Color Color { get; set; } = Color.Primary;
+	[Parameter]
+	public bool Required { get; set; }
 
-    [Parameter]
-    public Size Size { get; set; } = Size.Default;
+	[Parameter]
+	public int MaxLength { get; set; }
 
-    [Parameter]
-    public EventCallback<string> ValueChanged { get; set; }
+	[Parameter]
+	public Color Color { get; set; } = Color.Primary;
 
-    [Parameter]
-    public EventCallback<ChangeEventArgs> OnChange { get; set; }
+	[Parameter]
+	public Size Size { get; set; } = Size.Default;
 
-    [Parameter]
-    public EventCallback<ChangeEventArgs> OnInput { get; set; }
+	[Parameter]
+	public EventCallback<ChangeEventArgs> OnChange { get; set; }
 
-    private string? GetColorClass()
-    {
-        return $"form-control-{Color.Value}";
-    }
+	[Parameter]
+	public EventCallback<ChangeEventArgs> OnInput { get; set; }
 
-    private string? GetSizeClass()
-    {
-        if (Size != Size.Default)
-            return $"form-control-{Size.Value}";
-        return null;
-    }
+	[CascadingParameter]
+	public Validation? ParentValidation { get; set; }
 
-    protected override Dictionary<string, object> BuildAttributes()
-    {
-        Dictionary<string, object> attributes = base.BuildAttributes();
+	public object? ValidationValue => Value;
 
-        var baseClasses = "form-control";
-        string? colorClass = GetColorClass();
-        string? sizeClass = GetSizeClass();
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && ParentValidation is not null)
+		{
+			await ParentValidation.InitializeInput(this);
+			if (ValueExpression is not null)
+			{
+				await ParentValidation.InitializeInputExpression(ValueExpression);
+			}
+		}
 
-        if (colorClass != null)
-            baseClasses = $"{baseClasses} {colorClass}";
+        await base.OnAfterRenderAsync(firstRender);
+	}
 
-        if (sizeClass != null)
-            baseClasses = $"{baseClasses} {sizeClass}";
+	private async Task HandleInput(ChangeEventArgs e)
+	{
+		Value = e?.Value?.ToString();
+		await ValueChanged.InvokeAsync(Value);
+		if (OnInput.HasDelegate)
+			await OnInput.InvokeAsync(e);
 
-        attributes["class"] = AppendToClass(attributes.GetValueOrDefault("class")
-            ?.ToString(), baseClasses);
+		if (ParentValidation is not null)
+			await ParentValidation.NotifyInputChanged(Value ?? string.Empty);
+	}
 
-        if (!string.IsNullOrEmpty(Value))
-            attributes["value"] = Value;
+	private async Task HandleChange(ChangeEventArgs e)
+	{
+		Value = e?.Value?.ToString();
+		await ValueChanged.InvokeAsync(Value);
+		await OnChange.InvokeAsync(e);
 
-        if (!string.IsNullOrEmpty(Placeholder))
-            attributes["placeholder"] = Placeholder;
+		if (ParentValidation is not null)
+			await ParentValidation.NotifyInputChanged(Value ?? string.Empty);
+	}
 
-        if (Disabled)
-            attributes["disabled"] = true;
+	private string? GetColorClass()
+	{
+		return $"form-control-{Color.Value}";
+	}
 
-        if (ReadOnly)
-            attributes["readonly"] = true;
+	private string? GetSizeClass()
+	{
+		if (Size != Size.Default)
+			return $"form-control-{Size.Value}";
+		return null;
+	}
 
-        if (Required)
-            attributes["required"] = true;
+	private string? GetValidationClass()
+	{
+		if (ParentValidation?.Status == ValidationStatus.Error)
+			return "is-invalid";
+		else if (ParentValidation?.Status == ValidationStatus.Success)
+			return "is-valid";
 
-        if (MaxLength > 0)
-            attributes["maxlength"] = MaxLength;
+		return null;
+	}
 
-        return attributes;
-    }
+	protected override Dictionary<string, object> BuildAttributes()
+	{
+		Dictionary<string, object> attributes = base.BuildAttributes();
 
+		// Add TextEdit-specific attributes
+		var baseClasses = "form-control";
+		string? colorClass = GetColorClass();
+		string? sizeClass = GetSizeClass();
+		string? validationClass = GetValidationClass();
+
+		if (colorClass != null)
+			baseClasses = $"{baseClasses} {colorClass}";
+
+		if (sizeClass != null)
+			baseClasses = $"{baseClasses} {sizeClass}";
+
+		if (validationClass != null)
+			baseClasses = $"{baseClasses} {validationClass}";
+
+		attributes["class"] = AppendToClass(attributes.GetValueOrDefault("class")
+			?.ToString(), baseClasses);
+
+		if (!string.IsNullOrEmpty(Value))
+			attributes["value"] = Value;
+
+		if (!string.IsNullOrEmpty(Placeholder))
+			attributes["placeholder"] = Placeholder;
+
+		if (Disabled)
+			attributes["disabled"] = true;
+
+		if (ReadOnly)
+			attributes["readonly"] = true;
+
+		if (Required)
+			attributes["required"] = true;
+
+		if (MaxLength > 0)
+			attributes["maxlength"] = MaxLength;
+
+		// Wire input/change events
+		attributes["oninput"] = EventCallback.Factory.Create<ChangeEventArgs>(this, HandleInput);
+		attributes["onchange"] = EventCallback.Factory.Create<ChangeEventArgs>(this, HandleChange);
+
+		return attributes;
+	}
 }
