@@ -1,0 +1,91 @@
+@using Soenneker.Quark.Enums.Colors
+@using Soenneker.Quark.Enums.Size
+@inherits Soenneker.Quark.Components.Element
+
+<input type="text" @attributes="BuildAttributes()" />
+
+@code {
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    [Parameter]
+    public bool Required { get; set; }
+
+    [Parameter]
+    public int MaxLength { get; set; }
+
+    [Parameter]
+    public Color Color { get; set; } = Color.Primary;
+
+    [Parameter]
+    public Size Size { get; set; } = Size.Default;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> OnChange { get; set; }
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> OnInput { get; set; }
+
+    private string? GetColorClass()
+    {
+        return $"form-control-{Color.Value}";
+    }
+
+    private string? GetSizeClass()
+    {
+        if (Size != Size.Default)
+            return $"form-control-{Size.Value}";
+        return null;
+    }
+
+    protected override Dictionary<string, object> BuildAttributes()
+    {
+        Dictionary<string, object> attributes = base.BuildAttributes();
+
+        var baseClasses = "form-control";
+        string? colorClass = GetColorClass();
+        string? sizeClass = GetSizeClass();
+
+        if (colorClass != null)
+            baseClasses = $"{baseClasses} {colorClass}";
+
+        if (sizeClass != null)
+            baseClasses = $"{baseClasses} {sizeClass}";
+
+        attributes["class"] = AppendToClass(attributes.GetValueOrDefault("class")
+            ?.ToString(), baseClasses);
+
+        if (!string.IsNullOrEmpty(Value))
+            attributes["value"] = Value;
+
+        if (!string.IsNullOrEmpty(Placeholder))
+            attributes["placeholder"] = Placeholder;
+
+        if (Disabled)
+            attributes["disabled"] = true;
+
+        if (ReadOnly)
+            attributes["readonly"] = true;
+
+        if (Required)
+            attributes["required"] = true;
+
+        if (MaxLength > 0)
+            attributes["maxlength"] = MaxLength;
+
+        return attributes;
+    }
+
+}
