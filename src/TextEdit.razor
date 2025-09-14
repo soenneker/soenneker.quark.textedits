@@ -55,11 +55,11 @@
 	{
 		if (firstRender && ParentValidation is not null)
 		{
-			await ParentValidation.InitializeInput(this);
 			if (ValueExpression is not null)
 			{
 				await ParentValidation.InitializeInputExpression(ValueExpression);
 			}
+			await ParentValidation.InitializeInput(this);
 		}
 
         await base.OnAfterRenderAsync(firstRender);
