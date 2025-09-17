@@ -138,8 +138,7 @@
 		if (validationClass != null)
 			baseClasses = $"{baseClasses} {validationClass}";
 
-		attributes["class"] = AppendToClass(attributes.GetValueOrDefault("class")
-			?.ToString(), baseClasses);
+		AppendToClassAttr(attributes, baseClasses);
 
 		if (Value.HasContent())
 			attributes["value"] = Value;
