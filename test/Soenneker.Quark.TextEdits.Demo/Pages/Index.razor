@@ -17,28 +17,28 @@
     <label for="basicInput" class="form-label">Basic Input (Standard binding)</label>
     <TextEdit Id="basicInput" 
               Placeholder="Enter some text..." 
-              @bind-Value="basicValue" />
-    <small class="form-text text-muted">Current value: @basicValue</small>
+              @bind-Value="_basicValue" />
+    <small class="form-text text-muted">Current value: @_basicValue</small>
 </div>
 
 <div class="mb-3">
     <label for="expressionInput" class="form-label">Expression Tree Binding</label>
     <TextEdit Id="expressionInput" 
               Placeholder="Uses expression tree..." 
-              @bind-Value="expressionValue" />
-    <small class="form-text text-muted">Current value: @expressionValue</small>
+              @bind-Value="_expressionValue" />
+    <small class="form-text text-muted">Current value: @_expressionValue</small>
 </div>
 
 <hr />
 
 <h2>TextEdit with Validation</h2>
-<Validations Model="validationModel">
+<Validations Model="_validationModel">
     <div class="mb-3">
         <label for="validatedInput" class="form-label">Required Field</label>
         <Validation Validator="@ValidateRequired">
             <TextEdit Id="validatedInput" 
                       Placeholder="This field is required..." 
-                      @bind-Value="validationModel.RequiredField" />
+                      @bind-Value="_validationModel.RequiredField" />
             <ValidationError />
         </Validation>
     </div>
@@ -48,7 +48,7 @@
         <Validation Validator="@ValidateEmail">
             <TextEdit Id="emailInput" 
                       Placeholder="Enter a valid email..." 
-                      @bind-Value="validationModel.EmailField" />
+                      @bind-Value="_validationModel.EmailField" />
             <ValidationError />
         </Validation>
     </div>
@@ -58,7 +58,7 @@
         <Validation UsePattern="true" PatternString="^[\d\s\-\(\)\+]+$">
             <TextEdit Id="patternInput" 
                       Placeholder="Enter phone number..." 
-                      @bind-Value="validationModel.PhoneField" />
+                      @bind-Value="_validationModel.PhoneField" />
             <ValidationError />
         </Validation>
     </div>
@@ -67,7 +67,7 @@
 <hr />
 
 <h2>Form with Multiple Validations</h2>
-<Validations @ref="validationsRef" Model="formModel">
+<Validations @ref="_validationsRef" Model="_formModel">
     <div class="row">
         <div class="col-md-6">
             <div class="mb-3">
@@ -75,7 +75,7 @@
                 <Validation Validator="@ValidateRequired">
                     <TextEdit Id="firstName" 
                               Placeholder="First name..." 
-                              @bind-Value="formModel.FirstName" />
+                              @bind-Value="_formModel.FirstName" />
                     <ValidationError />
                 </Validation>
             </div>
@@ -86,7 +86,7 @@
                 <Validation Validator="@ValidateRequired">
                     <TextEdit Id="lastName" 
                               Placeholder="Last name..." 
-                              @bind-Value="formModel.LastName" />
+                              @bind-Value="_formModel.LastName" />
                     <ValidationError />
                 </Validation>
             </div>
@@ -98,7 +98,7 @@
         <Validation Validator="@ValidateCompany">
             <TextEdit Id="company" 
                       Placeholder="Company name..." 
-                      @bind-Value="formModel.Company" />
+                      @bind-Value="_formModel.Company" />
             <ValidationError />
         </Validation>
     </div>
@@ -108,13 +108,13 @@
 </Validations>
 
 @code{
-    private string basicValue = string.Empty;
-    private string expressionValue = string.Empty;
+    private string _basicValue = string.Empty;
+    private string _expressionValue = string.Empty;
     
-    private ValidationModel validationModel = new();
-    private FormModel formModel = new();
+    private ValidationModel _validationModel = new();
+    private FormModel _formModel = new();
     
-    private Validations? validationsRef;
+    private Validations? _validationsRef;
 
     protected override void OnInitialized()
     {
@@ -173,20 +173,20 @@
     
     private async Task ValidateAll()
     {
-        if (validationsRef is not null)
+        if (_validationsRef is not null)
         {
-            await validationsRef.Validate();
+            await _validationsRef.Validate();
         }
     }
     
     private async Task ClearAll()
     {
-        if (validationsRef is not null)
+        if (_validationsRef is not null)
         {
-            await validationsRef.ClearAll();
+            await _validationsRef.ClearAll();
         }
         
-        formModel = new FormModel();
+        _formModel = new FormModel();
         await InvokeAsync(StateHasChanged);
     }
     

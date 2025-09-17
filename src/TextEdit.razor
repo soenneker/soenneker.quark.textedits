@@ -1,20 +1,19 @@
-@using Soenneker.Quark.Enums.Colors
-@using Soenneker.Quark.Enums.Size
 @using Soenneker.Quark.Validations
 @using Soenneker.Quark.Validations.Enums
 @using System.Linq.Expressions
+@using Soenneker.Blazor.Extensions.EventCallback
+@using Soenneker.Extensions.String
+@using Soenneker.Quark.Dtos.Colors
+@using Soenneker.Quark.Enums.Size
 @inherits Soenneker.Quark.Components.Element
 @implements Soenneker.Quark.Validations.Abstract.IValidationInput
-
 
 <input type="text" @attributes="BuildAttributes()" />
 
 @code {
-	[Parameter]
-	public string? Value { get; set; }
 
 	[Parameter]
-	public EventCallback<string?> ValueChanged { get; set; }
+	public string? Value { get; set; }
 
 	[Parameter]
 	public Expression<Func<string>>? ValueExpression { get; set; }
@@ -41,6 +40,9 @@
 	public Size Size { get; set; } = Size.Default;
 
 	[Parameter]
+	public EventCallback<string?> ValueChanged { get; set; }
+
+	[Parameter]
 	public EventCallback<ChangeEventArgs> OnChange { get; set; }
 
 	[Parameter]
@@ -59,18 +61,21 @@
 			{
 				await ParentValidation.InitializeInputExpression(ValueExpression);
 			}
+
 			await ParentValidation.InitializeInput(this);
 		}
 
-        await base.OnAfterRenderAsync(firstRender);
+		await base.OnAfterRenderAsync(firstRender);
 	}
 
 	private async Task HandleInput(ChangeEventArgs e)
 	{
 		Value = e?.Value?.ToString();
-		await ValueChanged.InvokeAsync(Value);
+
+		await ValueChanged.InvokeIfHasDelegate(Value);
+
 		if (OnInput.HasDelegate)
-			await OnInput.InvokeAsync(e);
+			await OnInput.InvokeIfHasDelegate(e);
 
 		if (ParentValidation is not null)
 			await ParentValidation.NotifyInputChanged(Value ?? string.Empty);
@@ -79,8 +84,9 @@
 	private async Task HandleChange(ChangeEventArgs e)
 	{
 		Value = e?.Value?.ToString();
-		await ValueChanged.InvokeAsync(Value);
-		await OnChange.InvokeAsync(e);
+
+		await ValueChanged.InvokeIfHasDelegate(Value);
+		await OnChange.InvokeIfHasDelegate(e);
 
 		if (ParentValidation is not null)
 			await ParentValidation.NotifyInputChanged(Value ?? string.Empty);
@@ -88,13 +94,17 @@
 
 	private string? GetColorClass()
 	{
-		return $"form-control-{Color.Value}";
+		if (Color.IsTheme)
+			return $"form-control-{Color.Theme!.Value}";
+
+		return null;
 	}
 
 	private string? GetSizeClass()
 	{
 		if (Size != Size.Default)
 			return $"form-control-{Size.Value}";
+
 		return null;
 	}
 
@@ -102,7 +112,8 @@
 	{
 		if (ParentValidation?.Status == ValidationStatus.Error)
 			return "is-invalid";
-		else if (ParentValidation?.Status == ValidationStatus.Success)
+
+		if (ParentValidation?.Status == ValidationStatus.Success)
 			return "is-valid";
 
 		return null;
@@ -130,10 +141,10 @@
 		attributes["class"] = AppendToClass(attributes.GetValueOrDefault("class")
 			?.ToString(), baseClasses);
 
-		if (!string.IsNullOrEmpty(Value))
+		if (Value.HasContent())
 			attributes["value"] = Value;
 
-		if (!string.IsNullOrEmpty(Placeholder))
+		if (Placeholder.HasContent())
 			attributes["placeholder"] = Placeholder;
 
 		if (Disabled)
