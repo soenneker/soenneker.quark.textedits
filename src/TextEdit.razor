@@ -3,7 +3,8 @@
 @using System.Linq.Expressions
 @using Soenneker.Blazor.Extensions.EventCallback
 @using Soenneker.Extensions.String
-@using Soenneker.Quark.Dtos.Colors
+@using Soenneker.Quark.Components.Builders
+@using Soenneker.Quark.Components.Builders.Colors
 @using Soenneker.Quark.Enums.Size
 @inherits Soenneker.Quark.Components.Element
 @implements Soenneker.Quark.Validations.Abstract.IValidationInput
@@ -34,7 +35,7 @@
 	public int MaxLength { get; set; }
 
 	[Parameter]
-	public Color Color { get; set; } = Color.Primary;
+	public CssValue<ColorBuilder>? Color { get; set; }
 
 	[Parameter]
 	public Size Size { get; set; } = Size.Default;
@@ -94,8 +95,18 @@
 
 	private string? GetColorClass()
 	{
-		if (Color.IsTheme)
-			return $"form-control-{Color.Theme!.Value}";
+		if (Color is not null && !Color.Value.IsEmpty)
+		{
+			string v = Color.Value.ToString().Trim();
+
+			if (Color.Value.IsCssClass)
+			{
+				if (v.StartsWith("form-control-", StringComparison.Ordinal))
+					return v;
+				else
+					return $"form-control-{v}";
+			}
+		}
 
 		return null;
 	}
@@ -139,6 +150,13 @@
 			baseClasses = $"{baseClasses} {validationClass}";
 
 		AppendToClassAttr(attributes, baseClasses);
+
+		// Handle custom CSS colors
+		if (Color is not null && !Color.Value.IsEmpty && !Color.Value.IsCssClass)
+		{
+			string v = Color.Value.ToString().Trim();
+			attributes["style"] = $"background-color:{v};border-color:{v};";
+		}
 
 		if (Value.HasContent())
 			attributes["value"] = Value;
