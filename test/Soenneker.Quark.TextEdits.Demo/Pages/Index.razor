@@ -1,7 +1,5 @@
 @page "/"
 @using Microsoft.Extensions.Logging
-@using Soenneker.Quark.Validations.Dtos
-@using Soenneker.Quark.Validations.Enums
 
 @inject ILogger<Index> Logger
 
@@ -67,7 +65,7 @@
 <hr />
 
 <h2>Form with Multiple Validations</h2>
-<Validations @ref="_validationsRef" Model="_formModel">
+<ValidationContainer @ref="_validationsRef" Model="_formModel">
     <div class="row">
         <div class="col-md-6">
             <div class="mb-3">
@@ -105,7 +103,7 @@
     
     <button type="button" class="btn btn-primary" @onclick="ValidateAll">Validate All Fields</button>
     <button type="button" class="btn btn-secondary" @onclick="ClearAll">Clear All</button>
-</Validations>
+</ValidationContainer>
 
 @code{
     private string _basicValue = string.Empty;
@@ -114,7 +112,7 @@
     private ValidationModel _validationModel = new();
     private FormModel _formModel = new();
     
-    private Validations? _validationsRef;
+    private ValidationContainer? _validationsRef;
 
     protected override void OnInitialized()
     {

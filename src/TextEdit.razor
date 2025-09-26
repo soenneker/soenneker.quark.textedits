@@ -1,17 +1,15 @@
-@using Soenneker.Quark.Validations
-@using Soenneker.Quark.Validations.Enums
 @using System.Linq.Expressions
 @using Soenneker.Blazor.Extensions.EventCallback
 @using Soenneker.Extensions.String
-@using Soenneker.Quark.Components.Builders
-@using Soenneker.Quark.Components.Builders.Colors
-@using Soenneker.Quark.Enums.Size
+@using Soenneker.Quark.Enums
+
 @inherits Soenneker.Quark.Element
-@implements Soenneker.Quark.Validations.Abstract.IValidationInput
+@implements Soenneker.Quark.IValidationInput
 
 <input type="text" @attributes="BuildAttributes()" />
 
 @code {
+	public override string? Name { get; set; } = "TextEdit";
 
 	[Parameter]
 	public string? Value { get; set; }
